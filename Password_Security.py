@@ -315,7 +315,7 @@ def main():
                 continue
                 
             result = analyzer.analyze_strength(password)
-            
+            print(password)  # For debugging purposes, remove in production
             print(f"\n📊 Password Analysis Results:")
             print(f"Strength: {result['strength']} (Score: {result['score']}/100)")
             print(f"Length: {result['length']} characters")
