@@ -31,11 +31,25 @@ class NetworkVulnScanner:
     
     def ping_host(self):
         """Check if target host is reachable"""
+        import platform
+        
+        # Skip ping for localhost - it should always be reachable
+        if self.target_host in ['127.0.0.1', 'localhost']:
+            return True
+            
         try:
-            result = subprocess.run(['ping', '-c', '1', self.target_host], 
-                                  capture_output=True, text=True, timeout=5)
+            # Determine ping command based on OS
+            system = platform.system().lower()
+            if system == "windows":
+                cmd = ['ping', '-n', '1', self.target_host]
+            else:  # Linux/macOS/Unix
+                cmd = ['ping', '-c', '1', self.target_host]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            print(f"Ping result: {result.returncode}")  # Debug output
             return result.returncode == 0
-        except:
+        except Exception as e:
+            print(f"Ping failed with exception: {e}")  # Debug output
             return False
     
     def port_scan(self, port):
@@ -126,10 +140,10 @@ class NetworkVulnScanner:
         # Step 1: Host discovery
         print("\n[1] Checking host availability...")
         if not self.ping_host():
-            print(f"Host {self.target_host} appears to be unreachable")
-            return
-        
-        print(f"Host {self.target_host} is reachable")
+            print(f"Host {self.target_host} appears to be unreachable via ping")
+            print("Continuing with port scan anyway (host might block ICMP)...")
+        else:
+            print(f"Host {self.target_host} is reachable")
         
         # Step 2: Port scanning
         print(f"\n[2] Scanning {len(self.target_ports)} ports...")
