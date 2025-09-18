@@ -73,7 +73,7 @@ class UserInputHelper:
             date_input = input(prompt).strip()
             
             if not date_input:  # Empty = today
-                return datetime.now()
+                return datetime.datetime.now()      #have to go into datetime then datetime again to get now()
             
             # Try different date formats
             date_formats = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"]
