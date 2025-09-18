@@ -13,6 +13,7 @@ from typing import List, Optional, Dict  # For type hints (Python 3.5+)
 
 class UserInputHelper:
     """Helper class for getting validated user input"""
+    transactions = []  # List to store transactions in memory
     
     CATEGORIES = [
         "Food & Dining",
@@ -136,44 +137,46 @@ class UserInputHelper:
                 print("Please enter a valid transaction ID number")
     
     @staticmethod
-    def pause_for_user():
-        """Pause and wait for user to press Enter"""
-        input("\nPress Enter to continue...")
-    
-    @staticmethod
     def clear_screen():
         """Clear the terminal screen"""
         import os
         os.system('cls' if os.name == 'nt' else 'clear')
 
 # Example usage and testing
-def demo_input_functions():
+def main():
     """Demonstrate all input functions"""
     helper = UserInputHelper()
-    
     print("=== Finance Tracker Input Demo ===\n")
     
-    # Get transaction details
-    amount = helper.get_amount("Enter transaction amount: $")
-    print(f"Amount: ${amount:.2f}")
-    
-    description = helper.get_description("Enter description: ")
-    print(f"Description: {description}")
-    
-    category = helper.get_category()
-    print(f"Category: {category}")
-    
-    date = helper.get_date()
-    print(f"Date: {date.strftime('%Y-%m-%d')}")
+    while True:
+        transactions = {
+            "ID": UserInputHelper.get_transaction_id("Enter transaction ID: "),
+            "Amount": UserInputHelper.get_amount("Enter transaction amount: $"),
+            "Description": UserInputHelper.get_description("Enter description: "),
+            "Category": UserInputHelper.get_category(),
+            "Date": UserInputHelper.get_date().strftime('%Y-%m-%d')
+        }
+        UserInputHelper.transactions.append(transactions)
+        print(f"\nTransaction added: {transactions}\n")
+        if not helper.get_yes_no("Add another transaction?"):
+            break
+    print("\nAll Transactions:")
+    for t in UserInputHelper.transactions:
+        print(t)    
+
+    with open("transactions.csv", mode="w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["ID","Amount", "Description", "Category", "Date"])
+        writer.writeheader()  # writes the header row
+        writer.writerows(UserInputHelper.transactions)  # writes all transactions
+        
+    print("\nTransactions saved to transactions.csv")
     
     # Confirmation
     if helper.get_yes_no("Save this transaction?"):
         print("Transaction would be saved!")
-        
     else:
         print("Transaction cancelled")
     
-    helper.pause_for_user()
-
+    print("\nGoodbye")
 if __name__ == "__main__":
-    demo_input_functions()
+    main()
