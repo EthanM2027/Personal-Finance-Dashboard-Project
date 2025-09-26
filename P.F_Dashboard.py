@@ -11,11 +11,11 @@ import sys          # For system operations and exit codes
 from typing import List, Optional, Dict  # For type hints (Python 3.5+)
 
 
-class UserInputHelper:
+class PersonalFinance:
     """Helper class for getting validated user input"""
     transactions = []  # List to store transactions in memory
     
-    CATEGORIES = [
+    CATEGORIES = [      # Predefined expense categories
         "Food & Dining",
         "Transportation", 
         "Shopping",
@@ -28,7 +28,7 @@ class UserInputHelper:
     ]
     
     @staticmethod
-    def get_amount(prompt="Enter amount: $") -> float:
+    def get_amount(prompt="Enter amount: $") -> float:  #This gets the value ammount in 1.00 format or 1,000.00 format
         """Get a valid monetary amount from user"""
         while True:
             try:
@@ -42,7 +42,7 @@ class UserInputHelper:
                 print("Please enter a valid number (e.g., 25.50)")
     
     @staticmethod
-    def get_description(prompt="Enter description: ") -> str:
+    def get_description(prompt="Enter description: ") -> str:   #This gets the description of the transaction while ensuring it is not empty
         """Get transaction description"""
         while True:
             description = input(prompt).strip()
@@ -51,23 +51,23 @@ class UserInputHelper:
             print("Description cannot be empty")
     
     @staticmethod
-    def get_category() -> str:
+    def get_category() -> str:  #This gets the category from a predefined list
         """Get expense category from predefined list"""
         print("\nSelect a category:")
-        for i, category in enumerate(UserInputHelper.CATEGORIES, 1):
+        for i, category in enumerate(PersonalFinance.CATEGORIES, 1):
             print(f"{i:2d}. {category}")
         
         while True:
             try:
                 choice = int(input("Enter category number: "))
-                if 1 <= choice <= len(UserInputHelper.CATEGORIES):
-                    return UserInputHelper.CATEGORIES[choice - 1]
+                if 1 <= choice <= len(PersonalFinance.CATEGORIES):
+                    return PersonalFinance.CATEGORIES[choice - 1]
                 else:
-                    print(f"Please enter a number between 1 and {len(UserInputHelper.CATEGORIES)}")
+                    print(f"Please enter a number between 1 and {len(PersonalFinance.CATEGORIES)}")
             except ValueError:
                 print("Please enter a valid number")
     
-    @staticmethod
+    @staticmethod   #This gets the date of the transaction and allows for multiple formats
     def get_date(prompt="Enter date (YYYY-MM-DD) or press Enter for today: ") -> datetime:
         """Get date input with validation"""
         while True:
@@ -88,7 +88,7 @@ class UserInputHelper:
             print("Invalid date format. Try: YYYY-MM-DD, MM/DD/YYYY, or MM-DD-YYYY")
     
     @staticmethod
-    def get_yes_no(prompt) -> bool:
+    def get_yes_no(prompt) -> bool: #This gets a yes or no answer from the user
         """Get yes/no confirmation"""
         while True:
             answer = input(f"{prompt} (y/n): ").lower().strip()
@@ -100,7 +100,7 @@ class UserInputHelper:
                 print("Please enter 'y' for yes or 'n' for no")
     
     @staticmethod
-    def get_menu_choice(title: str, options: List[str]) -> int:
+    def get_menu_choice(title: str, options: List[str]) -> int: #This displays a menu and gets the user's choice
         """Display menu and get user choice"""
         print(f"\n{title}")
         print("=" * len(title))
@@ -119,12 +119,12 @@ class UserInputHelper:
                 print("Please enter a valid number")
     
     @staticmethod
-    def get_search_term(prompt="Enter search term: ") -> str:
+    def get_search_term(prompt="Enter search term: ") -> str:   #Gets a search term from the user
         """Get search term (can be empty)"""
         return input(prompt).strip()
     
     @staticmethod
-    def get_transaction_id(prompt="Enter transaction ID: ") -> int:
+    def get_transaction_id(prompt="Enter transaction ID: ") -> int: #This gets a transaction ID and ensures it is a positive integer
         """Get transaction ID with validation"""
         while True:
             try:
@@ -137,7 +137,7 @@ class UserInputHelper:
                 print("Please enter a valid transaction ID number")
     
     @staticmethod
-    def clear_screen():
+    def clear_screen(): #This clears the terminal screen
         """Clear the terminal screen"""
         import os
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -145,34 +145,34 @@ class UserInputHelper:
 # Example usage and testing
 def main():
     """Demonstrate all input functions"""
-    helper = UserInputHelper()
+    pFinance = PersonalFinance()
     print("=== Finance Tracker Input Demo ===\n")
     
     while True:
         transactions = {
-            "ID": UserInputHelper.get_transaction_id("Enter transaction ID: "),
-            "Amount": UserInputHelper.get_amount("Enter transaction amount: $"),
-            "Description": UserInputHelper.get_description("Enter description: "),
-            "Category": UserInputHelper.get_category(),
-            "Date": UserInputHelper.get_date().strftime('%Y-%m-%d')
+            "ID": PersonalFinance.get_transaction_id("Enter transaction ID: "),
+            "Amount": PersonalFinance.get_amount("Enter transaction amount: $"),
+            "Description": PersonalFinance.get_description("Enter description: "),
+            "Category": PersonalFinance.get_category(),
+            "Date": PersonalFinance.get_date().strftime('%Y-%m-%d')
         }
-        UserInputHelper.transactions.append(transactions)
+        PersonalFinance.transactions.append(transactions)
         print(f"\nTransaction added: {transactions}\n")
-        if not helper.get_yes_no("Add another transaction?"):
+        if not pFinance.get_yes_no("Add another transaction?"):
             break
     print("\nAll Transactions:")
-    for t in UserInputHelper.transactions:
+    for t in PersonalFinance.transactions:
         print(t)    
 
     with open("transactions.csv", mode="w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=["ID","Amount", "Description", "Category", "Date"])
         writer.writeheader()  # writes the header row
-        writer.writerows(UserInputHelper.transactions)  # writes all transactions
+        writer.writerows(PersonalFinance.transactions)  # writes all transactions
         
     print("\nTransactions saved to transactions.csv")
     
     # Confirmation
-    if helper.get_yes_no("Save this transaction?"):
+    if pFinance.get_yes_no("Save this transaction?"):
         print("Transaction would be saved!")
     else:
         print("Transaction cancelled")
