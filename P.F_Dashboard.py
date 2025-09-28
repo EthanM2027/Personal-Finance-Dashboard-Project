@@ -1,48 +1,89 @@
 #!/usr/bin/env python3
 """
-User Input Helper Functions for Personal Finance Tracker
-These functions handle user input with validation and error handling.
+Personal Finance Tracker - Fixed Version
 """
 
-import csv          # For reading/writing CSV files
-import datetime     # For handling dates and times
-import os           # For file system operations
-import sys          # For system operations and exit codes
-from typing import List, Optional, Dict  # For type hints (Python 3.5+)
-
+import csv
+import datetime
+import os
+import sys
+from typing import List, Optional, Dict
 
 class PersonalFinance:
     """Helper class for getting validated user input"""
     transactions = []  # List to store transactions in memory
     
-    CATEGORIES = [      # Predefined expense categories
-        "Food & Dining",
-        "Transportation", 
-        "Shopping",
-        "Entertainment",
-        "Bills & Utilities",
-        "Healthcare",
-        "Travel",
-        "Education",
+    CATEGORIES = [
+        "Checking", 
+        "Savings", 
+        "Credit Card", 
+        "Investment",
         "Other"
     ]
     
     @staticmethod
-    def get_amount(prompt="Enter amount: $") -> float:  #This gets the value ammount in 1.00 format or 1,000.00 format
+    def load_transactions_from_csv():
+        """Load existing transactions from CSV file"""
+        PersonalFinance.transactions = []  # Clear existing transactions
+        
+        if not os.path.exists("transactions.csv"):
+            print("No existing transactions.csv file found. Starting fresh!")
+            return
+        
+        try:
+            with open("transactions.csv", mode="r") as file:
+                reader = csv.DictReader(file)
+                
+                for row in reader:
+                    # Convert data types properly
+                    transaction = {
+                        "ID": int(row["ID"]),
+                        "Amount": float(row["Amount"]),
+                        "Description": row["Description"],
+                        "Category": row["Category"],
+                        "Date": row["Date"]
+                    }
+                    PersonalFinance.transactions.append(transaction)
+                    
+            print(f"Loaded {len(PersonalFinance.transactions)} existing transactions from CSV")
+            
+        except FileNotFoundError:
+            print("transactions.csv file not found! Starting fresh.")
+        except Exception as e:
+            print(f"Error loading transactions: {e}")
+            print("Starting fresh...")
+    
+    @staticmethod
+    def save_transactions_to_csv():
+        """Save all transactions to CSV file"""
+        try:
+            with open("transactions.csv", mode="w", newline="") as file:
+                writer = csv.DictWriter(file, fieldnames=["ID", "Amount", "Description", "Category", "Date"])
+                writer.writeheader()
+                writer.writerows(PersonalFinance.transactions)
+            
+            print(f"\n{len(PersonalFinance.transactions)} transactions saved to transactions.csv")
+            return True
+        except Exception as e:
+            print(f"Error saving transactions: {e}")
+            return False
+    
+    @staticmethod
+    def get_amount(prompt="Enter amount: $") -> float:
         """Get a valid monetary amount from user"""
         while True:
             try:
                 amount_str = input(prompt).replace('$', '').replace(',', '')
                 amount = float(amount_str)
-                if amount <= 0:
-                    print("Amount must be greater than 0")
+                if amount >= 100000000 or amount <= -100000000:
+                    print("Amount must be + or - of 100 million")
                     continue
-                return round(amount, 2)  # Round to 2 decimal places
+                return round(amount, 2)
             except ValueError:
                 print("Please enter a valid number (e.g., 25.50)")
     
     @staticmethod
-    def get_description(prompt="Enter description: ") -> str:   #This gets the description of the transaction while ensuring it is not empty
+    def get_description(prompt="Enter description: ") -> str:
         """Get transaction description"""
         while True:
             description = input(prompt).strip()
@@ -51,7 +92,7 @@ class PersonalFinance:
             print("Description cannot be empty")
     
     @staticmethod
-    def get_category() -> str:  #This gets the category from a predefined list
+    def get_category() -> str:
         """Get expense category from predefined list"""
         print("\nSelect a category:")
         for i, category in enumerate(PersonalFinance.CATEGORIES, 1):
@@ -67,28 +108,28 @@ class PersonalFinance:
             except ValueError:
                 print("Please enter a valid number")
     
-    @staticmethod   #This gets the date of the transaction and allows for multiple formats
-    def get_date(prompt="Enter date (YYYY-MM-DD) or press Enter for today: ") -> datetime:
+    @staticmethod
+    def get_date(prompt="Enter date (YYYY-MM-DD) or press Enter for today: ") -> datetime.datetime:
         """Get date input with validation"""
         while True:
             date_input = input(prompt).strip()
             
             if not date_input:  # Empty = today
-                return datetime.datetime.now()      #have to go into datetime then datetime again to get now()
+                return datetime.datetime.now()
             
             # Try different date formats
             date_formats = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"]
             
             for fmt in date_formats:
                 try:
-                    return datetime.strptime(date_input, fmt)
+                    return datetime.datetime.strptime(date_input, fmt)
                 except ValueError:
                     continue
             
             print("Invalid date format. Try: YYYY-MM-DD, MM/DD/YYYY, or MM-DD-YYYY")
     
     @staticmethod
-    def get_yes_no(prompt) -> bool: #This gets a yes or no answer from the user
+    def get_yes_no(prompt) -> bool:
         """Get yes/no confirmation"""
         while True:
             answer = input(f"{prompt} (y/n): ").lower().strip()
@@ -100,7 +141,7 @@ class PersonalFinance:
                 print("Please enter 'y' for yes or 'n' for no")
     
     @staticmethod
-    def get_menu_choice(title: str, options: List[str]) -> int: #This displays a menu and gets the user's choice
+    def get_menu_choice(title: str, options: List[str]) -> int:
         """Display menu and get user choice"""
         print(f"\n{title}")
         print("=" * len(title))
@@ -112,19 +153,14 @@ class PersonalFinance:
             try:
                 choice = int(input("\nEnter your choice: "))
                 if 1 <= choice <= len(options):
-                    return choice - 1  # Return 0-based index
+                    return choice - 1
                 else:
                     print(f"Please enter a number between 1 and {len(options)}")
             except ValueError:
                 print("Please enter a valid number")
     
     @staticmethod
-    def get_search_term(prompt="Enter search term: ") -> str:   #Gets a search term from the user
-        """Get search term (can be empty)"""
-        return input(prompt).strip()
-    
-    @staticmethod
-    def get_transaction_id(prompt="Enter transaction ID: ") -> int: #This gets a transaction ID and ensures it is a positive integer
+    def get_transaction_id(prompt="Enter transaction ID: ") -> int:
         """Get transaction ID with validation"""
         while True:
             try:
@@ -137,46 +173,94 @@ class PersonalFinance:
                 print("Please enter a valid transaction ID number")
     
     @staticmethod
-    def clear_screen(): #This clears the terminal screen
-        """Clear the terminal screen"""
-        import os
-        os.system('cls' if os.name == 'nt' else 'clear')
+    def display_transactions():
+        """Display all transactions in a nice format"""
+        if not PersonalFinance.transactions:
+            print("\nNo transactions found!")
+            return
+        
+        print(f"\n{'='*80}")
+        print(f"{"ID":<10}{'Amount':<10} {'Category':<15} {'Date':<12} Description")
+        print(f"{'='*80}")
+        
+        total_amount = 0
+        for transaction in PersonalFinance.transactions:
+            amount = float(transaction['Amount'])
+            total_amount += amount
+            
+            print(f"{transaction['ID']: <10} ${amount:<9.2f} "
+                  f"{transaction['Category']:<15} {transaction['Date']:<12} "
+                  f"{transaction['Description']}")
+        
+        print(f"{'='*80}")
+        print(f"Total transactions: {len(PersonalFinance.transactions)}")
+        print(f"Total amount: ${total_amount:.2f}")
+        print(f"{'='*80}")
 
-# Example usage and testing
 def main():
-    """Demonstrate all input functions"""
-    pFinance = PersonalFinance()
-    print("=== Finance Tracker Input Demo ===\n")
+    """Main program function"""
+    print("=== Personal Finance Tracker ===")
+    print("Loading existing transactions...")
+    
+    # Load existing transactions at startup
+    PersonalFinance.load_transactions_from_csv()
+    
+    main_menu_options = [
+        "Add Transaction",
+        "View Transactions", 
+        "Search Transactions",
+        "Exit"
+    ]
     
     while True:
-        transactions = {
-            "ID": PersonalFinance.get_transaction_id("Enter transaction ID: "),
-            "Amount": PersonalFinance.get_amount("Enter transaction amount: $"),
-            "Description": PersonalFinance.get_description("Enter description: "),
-            "Category": PersonalFinance.get_category(),
-            "Date": PersonalFinance.get_date().strftime('%Y-%m-%d')
-        }
-        PersonalFinance.transactions.append(transactions)
-        print(f"\nTransaction added: {transactions}\n")
-        if not pFinance.get_yes_no("Add another transaction?"):
-            break
-    print("\nAll Transactions:")
-    for t in PersonalFinance.transactions:
-        print(t)    
-
-    with open("transactions.csv", mode="w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=["ID","Amount", "Description", "Category", "Date"])
-        writer.writeheader()  # writes the header row
-        writer.writerows(PersonalFinance.transactions)  # writes all transactions
+        choice = PersonalFinance.get_menu_choice("Main Menu", main_menu_options)
         
-    print("\nTransactions saved to transactions.csv")
-    
-    # Confirmation
-    if pFinance.get_yes_no("Save this transaction?"):
-        print("Transaction would be saved!")
-    else:
-        print("Transaction cancelled")
-    
-    print("\nGoodbye")
+        if choice == 0:  # Add Transaction
+            print("\n--- Add New Transaction ---")
+            '''
+            # Get next available ID
+            if PersonalFinance.transactions:
+                next_id = max(int(t['ID']) for t in PersonalFinance.transactions) + 1
+                print(f"Next transaction ID will be: {next_id}")
+                use_auto_id = PersonalFinance.get_yes_no("Use automatic ID?")
+                if use_auto_id:
+                    transaction_id = next_id
+                else:
+                    transaction_id = PersonalFinance.get_transaction_id("Enter transaction ID: ")
+            else:
+                transaction_id = PersonalFinance.get_transaction_id("Enter transaction ID: ")
+            '''
+            # Create new transaction
+            new_transaction = {
+                "ID": len(PersonalFinance.transactions) + 1,  # Auto-increment ID
+                "Amount": PersonalFinance.get_amount("Enter transaction amount: $"),
+                "Description": PersonalFinance.get_description("Enter description: "),
+                "Category": PersonalFinance.get_category(),
+                "Date": PersonalFinance.get_date().strftime('%Y-%m-%d')
+            }
+            
+            # Add to transactions list
+            PersonalFinance.transactions.append(new_transaction)
+            print(f"\n✓ Transaction added successfully!")
+            print(f"Amount: ${new_transaction['Amount']:.2f}")
+            
+        elif choice == 1:  # View Transactions
+            PersonalFinance.display_transactions()
+            
+        elif choice == 2:  # Search Transactions (placeholder)
+            print("\nSearch functionality coming soon!")
+            
+        elif choice == 3:  # Exit
+            print("\nSaving transactions before exit...")
+            if PersonalFinance.save_transactions_to_csv():
+                print("✓ All transactions saved successfully!")
+            else:
+                print("✗ Error saving transactions!")
+                if not PersonalFinance.get_yes_no("Exit anyway?"):
+                    continue
+            
+            print("Thank you for using Personal Finance Tracker!")
+            sys.exit(0)
+
 if __name__ == "__main__":
     main()
