@@ -1,0 +1,102 @@
+ID,Amount,Description,Category,Date
+1,267.95,Transaction 1,Other,2025-08-20
+2,131.98,Transaction 2,Checking,2025-08-10
+3,184.34,Transaction 3,Checking,2025-08-13
+4,122.79,Transaction 4,Investment,2025-09-23
+5,117.38,Transaction 5,Investment,2025-08-11
+6,139.77,Transaction 6,Investment,2025-08-04
+7,163.91,Transaction 7,Savings,2025-07-30
+8,59.36,Transaction 8,Credit Card,2025-08-23
+9,283.89,Transaction 9,Checking,2025-09-28
+10,108.31,Transaction 10,Savings,2025-09-15
+11,174.55,Transaction 11,Savings,2025-08-16
+12,90.01,Transaction 12,Savings,2025-09-10
+13,240.12,Transaction 13,Credit Card,2025-08-20
+14,224.83,Transaction 14,Credit Card,2025-09-19
+15,146.52,Transaction 15,Checking,2025-08-28
+16,210.34,Transaction 16,Savings,2025-09-27
+17,25.02,Transaction 17,Savings,2025-08-13
+18,214.36,Transaction 18,Other,2025-08-18
+19,101.88,Transaction 19,Credit Card,2025-08-13
+20,219.51,Transaction 20,Savings,2025-09-02
+21,296.78,Transaction 21,Other,2025-09-23
+22,235.06,Transaction 22,Credit Card,2025-08-20
+23,16.58,Transaction 23,Checking,2025-08-17
+24,221.83,Transaction 24,Savings,2025-09-05
+25,184.41,Transaction 25,Other,2025-08-26
+26,268.94,Transaction 26,Credit Card,2025-08-12
+27,134.17,Transaction 27,Investment,2025-08-12
+28,171.33,Transaction 28,Other,2025-08-28
+29,138.67,Transaction 29,Savings,2025-09-01
+30,132.42,Transaction 30,Investment,2025-08-21
+31,286.41,Transaction 31,Investment,2025-09-18
+32,226.89,Transaction 32,Checking,2025-09-25
+33,11.43,Transaction 33,Savings,2025-08-14
+34,243.65,Transaction 34,Investment,2025-08-08
+35,177.82,Transaction 35,Checking,2025-08-21
+36,94.22,Transaction 36,Checking,2025-09-06
+37,211.57,Transaction 37,Savings,2025-09-22
+38,195.58,Transaction 38,Credit Card,2025-09-23
+39,276.36,Transaction 39,Investment,2025-09-09
+40,124.48,Transaction 40,Credit Card,2025-09-20
+41,51.77,Transaction 41,Investment,2025-08-03
+42,190.47,Transaction 42,Other,2025-09-05
+43,129.38,Transaction 43,Credit Card,2025-09-05
+44,139.48,Transaction 44,Investment,2025-09-07
+45,41.43,Transaction 45,Savings,2025-08-21
+46,63.12,Transaction 46,Savings,2025-09-19
+47,94.54,Transaction 47,Checking,2025-08-18
+48,296.58,Transaction 48,Checking,2025-09-18
+49,37.87,Transaction 49,Savings,2025-09-09
+50,121.49,Transaction 50,Credit Card,2025-09-20
+51,192.49,Transaction 51,Other,2025-08-09
+52,223.26,Transaction 52,Credit Card,2025-08-25
+53,262.83,Transaction 53,Credit Card,2025-08-17
+54,214.58,Transaction 54,Investment,2025-08-24
+55,57.38,Transaction 55,Checking,2025-09-21
+56,90.77,Transaction 56,Other,2025-07-30
+57,122.04,Transaction 57,Savings,2025-08-11
+58,153.8,Transaction 58,Checking,2025-09-26
+59,199.85,Transaction 59,Savings,2025-09-10
+60,293.07,Transaction 60,Other,2025-09-16
+61,194.95,Transaction 61,Credit Card,2025-08-22
+62,192.2,Transaction 62,Savings,2025-08-21
+63,282.39,Transaction 63,Checking,2025-08-01
+64,120.65,Transaction 64,Other,2025-08-20
+65,215.3,Transaction 65,Checking,2025-07-30
+66,101.06,Transaction 66,Savings,2025-09-02
+67,113.65,Transaction 67,Investment,2025-08-17
+68,235.08,Transaction 68,Investment,2025-08-17
+69,125.02,Transaction 69,Credit Card,2025-08-19
+70,205.36,Transaction 70,Checking,2025-08-31
+71,242.82,Transaction 71,Checking,2025-08-30
+72,94.64,Transaction 72,Savings,2025-09-02
+73,55.44,Transaction 73,Credit Card,2025-08-28
+74,58.78,Transaction 74,Savings,2025-08-09
+75,242.08,Transaction 75,Savings,2025-07-31
+76,132.27,Transaction 76,Other,2025-07-31
+77,201.81,Transaction 77,Savings,2025-09-26
+78,60.82,Transaction 78,Investment,2025-08-20
+79,64.77,Transaction 79,Checking,2025-08-28
+80,291.21,Transaction 80,Savings,2025-08-30
+81,275.06,Transaction 81,Investment,2025-09-25
+82,88.12,Transaction 82,Credit Card,2025-08-10
+83,188.98,Transaction 83,Credit Card,2025-08-09
+84,274.36,Transaction 84,Checking,2025-09-04
+85,207.89,Transaction 85,Savings,2025-09-13
+86,176.48,Transaction 86,Other,2025-09-03
+87,248.54,Transaction 87,Savings,2025-09-25
+88,281.33,Transaction 88,Credit Card,2025-09-02
+89,89.46,Transaction 89,Credit Card,2025-08-08
+90,241.94,Transaction 90,Credit Card,2025-09-16
+91,283.71,Transaction 91,Credit Card,2025-08-21
+92,54.64,Transaction 92,Savings,2025-09-16
+93,232.97,Transaction 93,Investment,2025-09-10
+94,232.67,Transaction 94,Checking,2025-09-06
+95,37.89,Transaction 95,Checking,2025-08-19
+96,222.84,Transaction 96,Savings,2025-09-19
+97,162.91,Transaction 97,Checking,2025-08-22
+98,147.99,Transaction 98,Other,2025-08-24
+99,232.03,Transaction 99,Checking,2025-08-30
+100,-6761.73,Transaction 100,Other,2025-09-04
+101,100.0,New Trasaction,Checking,2025-09-29

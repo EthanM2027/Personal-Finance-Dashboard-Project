@@ -1,6 +1,14 @@
+'''
+Still need to add a edit transaction function and a delete transaction function
+Next I will work on SQL lite database to store the transactions instead of a CSV file
+    This is good practice for working with databases in the future
+
+'''
+
+
 #!/usr/bin/env python3
 """
-Personal Finance Tracker - Fixed Version
+Personal Finance Tracker
 """
 
 import csv
@@ -26,12 +34,12 @@ class PersonalFinance:
         """Load existing transactions from CSV file"""
         PersonalFinance.transactions = []  # Clear existing transactions
         
-        if not os.path.exists("transactions.csv"):
+        if not os.path.exists("transactions_generated.csv"):
             print("No existing transactions.csv file found. Starting fresh!")
             return
         
         try:
-            with open("transactions.csv", mode="r") as file:
+            with open("transactions_generated.csv", mode="r") as file:
                 reader = csv.DictReader(file)
                 
                 for row in reader:
@@ -57,7 +65,7 @@ class PersonalFinance:
     def save_transactions_to_csv():
         """Save all transactions to CSV file"""
         try:
-            with open("transactions.csv", mode="w", newline="") as file:
+            with open("transactions_generated.csv", mode="w", newline="") as file:
                 writer = csv.DictWriter(file, fieldnames=["ID", "Amount", "Description", "Category", "Date"])
                 writer.writeheader()
                 writer.writerows(PersonalFinance.transactions)
@@ -153,25 +161,81 @@ class PersonalFinance:
             try:
                 choice = int(input("\nEnter your choice: "))
                 if 1 <= choice <= len(options):
-                    return choice - 1
+                    return choice
                 else:
                     print(f"Please enter a number between 1 and {len(options)}")
             except ValueError:
                 print("Please enter a valid number")
     
     @staticmethod
-    def get_transaction_id(prompt="Enter transaction ID: ") -> int:
-        """Get transaction ID with validation"""
+    def get_transaction_id(prompt="Enter transaction ID: "):
+        """Get transaction ID with validation and display it"""
         while True:
             try:
                 transaction_id = int(input(prompt))
-                if transaction_id > 0:
-                    return transaction_id
+                if 1 <= transaction_id <= len(PersonalFinance.transactions):
+                    selected = PersonalFinance.transactions[transaction_id - 1]
+                    
+                    # Display nicely
+                    print(f"\n{'='*80}")
+                    print(f"{'ID':<10}{'Amount':<10} {'Category':<15} {'Date':<12} Description")
+                    print(f"{'='*80}")
+                    print(f"{selected['ID']:<10} ${selected['Amount']:<9.2f} "
+                        f"{selected['Category']:<15} {selected['Date']:<12} "
+                        f"{selected['Description']}")
+                    print(f"{'='*80}")
+                    return selected #returning it here gives me the opttion to add somthing like edit transaction or somthing like that
                 else:
-                    print("Transaction ID must be greater than 0")
+                    print(f"Transaction ID must be between 1 and {len(PersonalFinance.transactions)}")
             except ValueError:
                 print("Please enter a valid transaction ID number")
+                
+    @staticmethod
+    def edit_transaction():
+        """Edit an existing Transaction"""
+        print("\n=== Edit Transaction ===")
+        
+        selected = PersonalFinance.get_transaction_id()
+        if not selected:
+            return # No transactions to edit
+        
+        # Edit Amount
+        if PersonalFinance.get_yes_no("Edit amount?"):
+            selected["Amount"] = PersonalFinance.get_amount("Enter new amount: $")
+        
+        # Edit Description
+        if PersonalFinance.get_yes_no("Edit description?"):
+            selected["Description"] = PersonalFinance.get_description("Enter new description: ")
+        
+        # Edit Category
+        if PersonalFinance.get_yes_no("Edit category?"):
+            selected["Category"] = PersonalFinance.get_category()
+        
+        # Edit Date
+        if PersonalFinance.get_yes_no("Edit date?"):
+            selected["Date"] = PersonalFinance.get_date().strftime('%Y-%m-%d')
     
+        print("\n✓ Transaction updated successfully!")
+        
+    
+    @staticmethod
+    def delete_transaction():
+        """Delete an existing transaction"""
+        print("\n=== Delete Transaction ===")
+        
+        selected = PersonalFinance.get_transaction_id()
+        if not selected:
+            return  # no transaction selected
+        
+        if PersonalFinance.get_yes_no("Are you sure you want to delete this transaction?"):
+            PersonalFinance.transactions.remove(selected)
+            
+            # Reassign IDs to keep them sequential
+            for i, transaction in enumerate(PersonalFinance.transactions):
+                transaction["ID"] = i + 1
+            
+            print("\n✓ Transaction deleted successfully!")
+        
     @staticmethod
     def display_transactions():
         """Display all transactions in a nice format"""
@@ -196,7 +260,8 @@ class PersonalFinance:
         print(f"Total transactions: {len(PersonalFinance.transactions)}")
         print(f"Total amount: ${total_amount:.2f}")
         print(f"{'='*80}")
-
+        
+        
 def main():
     """Main program function"""
     print("=== Personal Finance Tracker ===")
@@ -208,6 +273,8 @@ def main():
     main_menu_options = [
         "Add Transaction",
         "View Transactions", 
+        "Edit Trasnactions",
+        "Delete Transactions",
         "Search Transactions",
         "Exit"
     ]
@@ -215,21 +282,9 @@ def main():
     while True:
         choice = PersonalFinance.get_menu_choice("Main Menu", main_menu_options)
         
-        if choice == 0:  # Add Transaction
+        if choice == 1:  # Add Transaction
             print("\n--- Add New Transaction ---")
-            '''
-            # Get next available ID
-            if PersonalFinance.transactions:
-                next_id = max(int(t['ID']) for t in PersonalFinance.transactions) + 1
-                print(f"Next transaction ID will be: {next_id}")
-                use_auto_id = PersonalFinance.get_yes_no("Use automatic ID?")
-                if use_auto_id:
-                    transaction_id = next_id
-                else:
-                    transaction_id = PersonalFinance.get_transaction_id("Enter transaction ID: ")
-            else:
-                transaction_id = PersonalFinance.get_transaction_id("Enter transaction ID: ")
-            '''
+
             # Create new transaction
             new_transaction = {
                 "ID": len(PersonalFinance.transactions) + 1,  # Auto-increment ID
@@ -244,13 +299,15 @@ def main():
             print(f"\n✓ Transaction added successfully!")
             print(f"Amount: ${new_transaction['Amount']:.2f}")
             
-        elif choice == 1:  # View Transactions
+        elif choice == 2:  # View Transactions
             PersonalFinance.display_transactions()
-            
-        elif choice == 2:  # Search Transactions (placeholder)
-            print("\nSearch functionality coming soon!")
-            
-        elif choice == 3:  # Exit
+        elif choice == 3:  # Edit Transaction
+            PersonalFinance.edit_transaction()
+        elif choice == 4:  # Delete Transaction
+            PersonalFinance.delete_transaction()
+        elif choice == 5:  # Search Transactions
+            PersonalFinance.get_transaction_id()
+        elif choice == 6:  # Exit
             print("\nSaving transactions before exit...")
             if PersonalFinance.save_transactions_to_csv():
                 print("✓ All transactions saved successfully!")
