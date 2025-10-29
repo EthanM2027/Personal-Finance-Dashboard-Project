@@ -8,7 +8,8 @@ import datetime
 import sys
 from typing import List, Optional, Dict, Tuple
 from db import get_connection, create_schema, insert_default_data, load_transactions_from_db, add_transaction_to_db, update_transaction_in_db, delete_transaction_from_db
-from utils import get_menu_choice, get_account, get_amount, get_description, get_category, get_date, display_transactions, edit_transaction, delete_transaction, get_transaction_id
+from utils import get_menu_choice, get_account, get_amount, get_description, get_category, get_date, display_transactions, edit_transaction, delete_transaction, get_transaction_id, display_report
+
 import state
 
 DB_NAME = "finance_tracker.db"
@@ -33,6 +34,7 @@ def main():
         "Edit Transaction",
         "Delete Transaction",
         "Search Transaction",
+        "Display Report",
         "Exit"
     ]
     
@@ -91,9 +93,13 @@ def main():
             get_transaction_id()
             
         elif choice == 6:
+            display_report()
+            
+        elif choice == 7:
             print("\nThank you for using Personal Finance Tracker!")
             print("All changes have been saved to the database automatically.")
             sys.exit(0)
+        
 
 
 if __name__ == "__main__":

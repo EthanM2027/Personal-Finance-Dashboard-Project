@@ -275,3 +275,40 @@ def display_transactions():
     print(f"Total transactions: {len(state.transactions)}")
     print(f"Net amount: ${total_amount:.2f}")
     print(f"{'='*90}")
+    
+def display_report():
+    print("\n=== Transaction Report ===")
+    if not state.transactions:
+        print("\nNo transactions found!")
+        return
+    
+    range_choice = input("Month or Year? ").lower()  # Fixed: get input and convert to lowercase
+    
+    if range_choice == "month":
+        month = input("Enter month (1-12): ")
+        year = input("Enter year (YYYY): ")
+        filtered_transactions = [t for t in state.transactions if t['Date'].startswith(f"{year}-{int(month):02d}")]
+    elif range_choice == "year":
+        year = input("Enter year (YYYY): ")
+        filtered_transactions = [t for t in state.transactions if t['Date'].startswith(f"{year}-")]
+    else:
+        print("Invalid range selection.")
+        return
+    
+    print(f"\n{'='*90}")
+    print(f"{'ID':<6} {'Amount':<12} {'Category':<15} {'Account':<15} {'Date':<12} Description")
+    print(f"{'='*90}")
+    
+    total_amount = 0
+    for transaction in filtered_transactions:  # Fixed: use filtered_transactions
+        amount = float(transaction['Amount'])
+        total_amount += amount
+        
+        print(f"{transaction['ID']:<6} ${amount:<11.2f} "
+                f"{transaction['Category']:<15} {transaction['Account']:<15} "
+                f"{transaction['Date']:<12} {transaction['Description']}")
+    
+    print(f"{'='*90}")
+    print(f"Total transactions: {len(filtered_transactions)}")  # Fixed: use filtered_transactions
+    print(f"Net amount: ${total_amount:.2f}")
+    print(f"{'='*90}")
