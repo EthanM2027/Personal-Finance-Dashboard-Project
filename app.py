@@ -1,4 +1,4 @@
-#Run this in terminal to run code:  python app.py
+#Run this in terminal to run code:  python app.py in browser http://127.0.0.1:5000
 #If I run python PF_Main.py it will run the CLI version of the Personal Finance app
 #Flask incorporates the same logic but provides a web interface instead of CLI
 
@@ -8,7 +8,7 @@ from db import (get_connection, create_schema, insert_default_data,
                 load_transactions_from_db, add_transaction_to_db, 
                 update_transaction_in_db, delete_transaction_from_db)
 import state
-
+    
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this-in-production'
 
@@ -201,8 +201,9 @@ def report():
                          range_type=range_type, 
                          year=year, 
                          month=month)
+    
 
 
 if __name__ == '__main__':
-    # Run the Flask web server
+    
     app.run(debug=True, port=5000)
