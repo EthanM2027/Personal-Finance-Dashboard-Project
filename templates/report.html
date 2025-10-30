@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Transaction Report</h1>
+
+<form method="GET" style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 30px; max-width: 600px;">
+    <div class="form-group">
+        <label for="range">Report Type:</label>
+        <select name="range" id="range" onchange="toggleInputs()">
+            <option value="all" {% if range_type == 'all' %}selected{% endif %}>All Transactions</option>
+            <option value="year" {% if range_type == 'year' %}selected{% endif %}>By Year</option>
+            <option value="month" {% if range_type == 'month' %}selected{% endif %}>By Month</option>
+        </select>
+    </div>
+    
+    <div class="form-group" id="year-input" style="display: none;">
+        <label for="year">Year:</label>
+        <input type="number" name="year" id="year" placeholder="2024" value="{{ year }}" min="2000" max="2100">
+    </div>
+    
+    <div class="form-group" id="month-input" style="display: none;">
+        <label for="month">Month:</label>
+        <select name="month" id="month">
+            <option value="">-- Select Month --</option>
+            <option value="1" {% if month == '1' %}selected{% endif %}>January</option>
+            <option value="2" {% if month == '2' %}selected{% endif %}>February</option>
+            <option value="3" {% if month == '3' %}selected{% endif %}>March</option>
+            <option value="4" {% if month == '4' %}selected{% endif %}>April</option>
+            <option value="5" {% if month == '5' %}selected{% endif %}>May</option>
+            <option value="6" {% if month == '6' %}selected{% endif %}>June</option>
+            <option value="7" {% if month == '7' %}selected{% endif %}>July</option>
+            <option value="8" {% if month == '8' %}selected{% endif %}>August</option>
+            <option value="9" {% if month == '9' %}selected{% endif %}>September</option>
+            <option value="10" {% if month == '10' %}selected{% endif %}>October</option>
+            <option value="11" {% if month == '11' %}selected{% endif %}>November</option>
+            <option value="12" {% if month == '12' %}selected{% endif %}>December</option>
+        </select>
+    </div>
+    
+    <button type="submit" class="btn" style="margin-top: 10px;">Generate Report</button>
+</form>
+
+<script>
+function toggleInputs() {
+    const range = document.getElementById('range').value;
+    document.getElementById('year-input').style.display = 
+        (range === 'year' || range === 'month') ? 'block' : 'none';
+    document.getElementById('month-input').style.display = 
+        (range === 'month') ? 'block' : 'none';
+}
+// Run on page load to show correct inputs
+toggleInputs();
+</script>
+
+<hr style="border: 1px solid #ddd; margin: 30px 0;">
+
+{% if transactions %}
+<h2 style="color: #667eea; font-size: 20px; margin-bottom: 15px;">
+    {% if range_type == 'month' and year and month %}
+        Results for {{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month|int] }} {{ year }}
+    {% elif range_type == 'year' and year %}
+        Results for Year {{ year }}
+    {% else %}
+        All Transactions
+    {% endif %}
+</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Account</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transactions %}
+        <tr>
+            <td>{{ t.ID }}</td>
+            <td>{{ t.Date }}</td>
+            <td>
+                {% if t.Amount > 0 %}
+                    <span class="amount-positive">+${{ "%.2f"|format(t.Amount) }}</span>
+                {% else %}
+                    <span class="amount-negative">-${{ "%.2f"|format(t.Amount|abs) }}</span>
+                {% endif %}
+            </td>
+            <td>{{ t.Category }}</td>
+            <td>{{ t.Account }}</td>
+            <td>{{ t.Description }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="summary">
+    <p><strong>Total transactions:</strong> {{ transactions|length }}</p>
+    <p>
+        <strong>Net amount:</strong> 
+        {% if total >= 0 %}
+            <span class="amount-positive">+${{ "%.2f"|format(total) }}</span>
+        {% else %}
+            <span class="amount-negative">-${{ "%.2f"|format(total|abs) }}</span>
+        {% endif %}
+    </p>
+</div>
+
+{% else %}
+<div class="empty-state">
+    <h2>No transactions found</h2>
+    <p>No transactions match the selected criteria.</p>
+</div>
+{% endif %}
+{% endblock %}

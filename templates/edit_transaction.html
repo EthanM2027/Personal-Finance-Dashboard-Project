@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit Transaction #{{ transaction.ID }}</h1>
+
+<form method="POST">
+    <div class="form-group">
+        <label>Account:</label>
+        <input type="text" value="{{ transaction.Account }}" disabled style="background: #f0f0f0; cursor: not-allowed;">
+        <small style="color: #dc3545;">⚠️ Account cannot be changed to maintain balance integrity</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="amount">Amount: *</label>
+        <input type="number" step="0.01" name="amount" id="amount" value="{{ transaction.Amount }}" required>
+        <small>Use positive numbers for income, negative for expenses</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="category_id">Category: *</label>
+        <select name="category_id" id="category_id" required>
+            {% for cat_id, name, cat_type in categories %}
+            <option value="{{ cat_id }}" {% if cat_id == transaction.CategoryID %}selected{% endif %}>
+                {{ name }} ({{ cat_type }})
+            </option>
+            {% endfor %}
+        </select>
+        <small>What type of transaction is this?</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="date">Date: *</label>
+        <input type="date" name="date" id="date" value="{{ transaction.Date }}" required>
+        <small>When did this transaction occur?</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">Description: *</label>
+        <input type="text" name="description" id="description" value="{{ transaction.Description }}" required maxlength="200">
+        <small>Brief description of the transaction</small>
+    </div>
+    
+    <div style="margin-top: 30px; display: flex; gap: 10px;">
+        <button type="submit" class="btn">Update Transaction</button>
+        <a href="/" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
