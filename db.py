@@ -1,133 +1,109 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from typing import List, Dict, Optional
 
-DB_NAME = "finance_tracker.db"
+# Adjust these to match your PostgreSQL setup
+DB_CONFIG = {
+    "dbname": "finance",
+    "user": "ethan",
+    "password": "strongpassword",
+    "host": "localhost",
+    "port": 5432
+}
+
 
 def get_connection():
-    """Get a database connection with foreign keys enabled"""
-    conn = sqlite3.connect(DB_NAME)
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    """Create PostgreSQL connection"""
+    return psycopg2.connect(**DB_CONFIG)
+
 
 def create_schema():
-    """Create a proper database schema with all tables and constraints"""
+    """Create all PostgreSQL tables, indexes, and triggers"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # 1. Categories table
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
                 type TEXT NOT NULL CHECK(type IN ('Income', 'Expense', 'Transfer')),
                 description TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                is_active INTEGER NOT NULL DEFAULT 1
-            )
-        ''')
-        
+                created_at TIMESTAMP DEFAULT NOW(),
+                is_active BOOLEAN DEFAULT TRUE
+            );
+        """)
+
         # 2. Accounts table
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
-                type TEXT NOT NULL CHECK(type IN ('Checking', 'Savings', 'Credit Card', 'Investment', 'Cash', 'Other')),
-                balance REAL NOT NULL DEFAULT 0.00,
-                currency TEXT NOT NULL DEFAULT 'USD',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                is_active INTEGER NOT NULL DEFAULT 1,
+                type TEXT NOT NULL CHECK(type IN (
+                    'Checking', 'Savings', 'Credit Card', 'Investment', 'Cash', 'Other'
+                )),
+                balance NUMERIC(12,2) DEFAULT 0.00,
+                currency TEXT DEFAULT 'USD',
+                created_at TIMESTAMP DEFAULT NOW(),
+                is_active BOOLEAN DEFAULT TRUE,
                 notes TEXT
-            )
-        ''')
-        
-        # 3. Transactions table - account_id changes not allowed after creation
-        cursor.execute('''
+            );
+        """)
+
+        # 3. Transactions table
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_id INTEGER NOT NULL,
-                category_id INTEGER NOT NULL,
-                amount REAL NOT NULL CHECK(amount != 0),
+                id SERIAL PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
+                category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+                amount NUMERIC(12,2) NOT NULL CHECK(amount != 0),
                 description TEXT NOT NULL,
-                transaction_date TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                transaction_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
                 notes TEXT,
                 reference_number TEXT,
-                is_reconciled INTEGER NOT NULL DEFAULT 0,
-                FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT,
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
-            )
-        ''')
-        
-        # Create indexes for better query performance
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_reconciled ON transactions(is_reconciled)')
-        
-        # Create trigger to update updated_at timestamp
-        cursor.execute('''
-            CREATE TRIGGER IF NOT EXISTS update_transaction_timestamp 
-            AFTER UPDATE ON transactions
+                is_reconciled BOOLEAN DEFAULT FALSE
+            );
+        """)
+
+        # Indexes for speed
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id);")
+
+        # Trigger: update updated_at timestamp
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION update_transaction_timestamp()
+            RETURNS TRIGGER AS $$
             BEGIN
-                UPDATE transactions SET updated_at = CURRENT_TIMESTAMP
-                WHERE id = NEW.id;
-            END
-        ''')
-        
-        # Fixed triggers that handle account changes properly
-        cursor.execute('''
-            CREATE TRIGGER IF NOT EXISTS update_balance_on_insert
-            AFTER INSERT ON transactions
-            BEGIN
-                UPDATE accounts 
-                SET balance = balance + NEW.amount
-                WHERE id = NEW.account_id;
-            END
-        ''')
-        
-        # Fixed update trigger - only updates amount, not account
-        cursor.execute('''
-            CREATE TRIGGER IF NOT EXISTS update_balance_on_update
-            AFTER UPDATE OF amount ON transactions
-            WHEN OLD.account_id = NEW.account_id
-            BEGIN
-                UPDATE accounts 
-                SET balance = balance - OLD.amount + NEW.amount
-                WHERE id = NEW.account_id;
-            END
-        ''')
-        
-        cursor.execute('''
-            CREATE TRIGGER IF NOT EXISTS update_balance_on_delete
-            AFTER DELETE ON transactions
-            BEGIN
-                UPDATE accounts 
-                SET balance = balance - OLD.amount
-                WHERE id = OLD.account_id;
-            END
-        ''')
-        
+                NEW.updated_at = NOW();
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        """)
+
+        cursor.execute("""
+            DROP TRIGGER IF EXISTS trigger_update_timestamp ON transactions;
+            CREATE TRIGGER trigger_update_timestamp
+            BEFORE UPDATE ON transactions
+            FOR EACH ROW
+            EXECUTE FUNCTION update_transaction_timestamp();
+        """)
+
         conn.commit()
-        print("✓ Proper database schema created successfully!")
-        
-        # Now insert default data
         insert_default_data(conn)
-        
         conn.close()
-        
-    except sqlite3.Error as e:
-        print(f"❌ Database error: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
+
+    except Exception as e:
+        print("❌ Database schema error:", e)
+
 
 def insert_default_data(conn):
-    """Insert default categories and a sample account"""
+    """Insert default categories and one default account"""
     cursor = conn.cursor()
-    
-    # Default categories
+
     default_categories = [
         ('Groceries', 'Expense', 'Food and household items'),
         ('Salary', 'Income', 'Regular employment income'),
@@ -145,167 +121,147 @@ def insert_default_data(conn):
         ('Education', 'Expense', 'Books, courses, tuition'),
         ('Insurance', 'Expense', 'Health, car, life insurance'),
     ]
-    
-    cursor.executemany('''
-        INSERT OR IGNORE INTO categories (name, type, description)
-        VALUES (?, ?, ?)
-    ''', default_categories)
-    
-    # Create a default checking account
-    cursor.execute('''
-        INSERT OR IGNORE INTO accounts (name, type, balance, currency, notes)
-        VALUES ('Main Checking', 'Checking', 0.00, 'USD', 'Primary checking account')
-    ''')
-    
+
+    cursor.executemany("""
+        INSERT INTO categories (name, type, description)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (name) DO NOTHING;
+    """, default_categories)
+
+    cursor.execute("""
+        INSERT INTO accounts (name, type, currency, notes)
+        VALUES ('Main Checking', 'Checking', 'USD', 'Primary checking account')
+        ON CONFLICT (name) DO NOTHING;
+    """)
+
     conn.commit()
-    print("✓ Default categories and accounts created!")
+    print("✓ Default categories & accounts loaded.")
+
 
 def load_transactions_from_db() -> List[Dict]:
-    """Load all transactions from SQLite database and return as a list of dicts"""
-    transactions_local: List[Dict] = []
+    """Load all transactions as list of dicts"""
+    transactions_local = []
 
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute("""
             SELECT 
-                t.id, 
-                t.amount, 
-                t.description, 
-                c.name as category_name,
+                t.id,
+                t.amount,
+                t.description,
+                c.name AS category_name,
                 t.transaction_date,
-                a.name as account_name,
+                a.name AS account_name,
                 t.account_id,
                 t.category_id
             FROM transactions t
             JOIN categories c ON t.category_id = c.id
             JOIN accounts a ON t.account_id = a.id
-            ORDER BY t.transaction_date DESC, t.id DESC
-        ''')
+            ORDER BY t.transaction_date DESC, t.id DESC;
+        """)
 
         rows = cursor.fetchall()
 
-        for row in rows:
-            transaction = {
-                "ID": row[0],
-                "Amount": row[1],
-                "Description": row[2],
-                "Category": row[3],
-                "Date": row[4],
-                "Account": row[5],
-                "AccountID": row[6],
-                "CategoryID": row[7]
-            }
-            transactions_local.append(transaction)
+        for r in rows:
+            transactions_local.append({
+                "ID": r[0],
+                "Amount": float(r[1]),
+                "Description": r[2],
+                "Category": r[3],
+                "Date": str(r[4]),
+                "Account": r[5],
+                "AccountID": r[6],
+                "CategoryID": r[7]
+            })
 
         conn.close()
-        print(f"Loaded {len(transactions_local)} transactions from database")
         return transactions_local
 
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-        print("Starting with empty transaction list...")
-        return transactions_local
+    except Exception as e:
+        print("❌ Load error:", e)
+        return []
 
 
-def add_transaction_to_db(account_id: int, category_id: int, amount: float, 
-                            description: str, transaction_date: str) -> Optional[int]:
-    """Add a new transaction to the database and return its ID"""
+def add_transaction_to_db(account_id: int, category_id: int, amount: float,
+                          description: str, transaction_date: str) -> Optional[int]:
+    """Add transaction to PostgreSQL"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Validate foreign keys exist
-        cursor.execute('SELECT id FROM accounts WHERE id = ? AND is_active = 1', (account_id,))
+
+        # Validate account
+        cursor.execute("SELECT id FROM accounts WHERE id = %s AND is_active = TRUE;", (account_id,))
         if not cursor.fetchone():
-            print(f"Error: Account ID {account_id} not found or inactive")
             conn.close()
             return None
-        
-        cursor.execute('SELECT id FROM categories WHERE id = ? AND is_active = 1', (category_id,))
+
+        # Validate category
+        cursor.execute("SELECT id FROM categories WHERE id = %s AND is_active = TRUE;", (category_id,))
         if not cursor.fetchone():
-            print(f"Error: Category ID {category_id} not found or inactive")
             conn.close()
             return None
-        
-        cursor.execute('''
+
+        cursor.execute("""
             INSERT INTO transactions (account_id, category_id, amount, description, transaction_date)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (account_id, category_id, amount, description, transaction_date))
-        
-        transaction_id = cursor.lastrowid
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
+        """, (account_id, category_id, amount, description, transaction_date))
+
+        transaction_id = cursor.fetchone()[0]
+
         conn.commit()
         conn.close()
-        
+
         return transaction_id
-        
-    except sqlite3.Error as e:
-        print(f"Error adding transaction: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
+
+    except Exception as e:
+        print("❌ Insert error:", e)
         return None
 
+
 def update_transaction_in_db(transaction_id: int, category_id: int,
-                            amount: float, description: str, transaction_date: str) -> bool:
-    """Update an existing transaction (account cannot be changed)"""
+                             amount: float, description: str, transaction_date: str) -> bool:
+    """Update transaction"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Validate category exists
-        cursor.execute('SELECT id FROM categories WHERE id = ? AND is_active = 1', (category_id,))
+
+        cursor.execute("SELECT id FROM categories WHERE id = %s AND is_active = TRUE;", (category_id,))
         if not cursor.fetchone():
-            print(f"Error: Category ID {category_id} not found or inactive")
             conn.close()
             return False
-        
-        # Update transaction (account_id is NOT included)
-        cursor.execute('''
-            UPDATE transactions 
-            SET category_id = ?, amount = ?, description = ?, transaction_date = ?
-            WHERE id = ?
-        ''', (category_id, amount, description, transaction_date, transaction_id))
-        
-        if cursor.rowcount == 0:
-            print(f"Error: Transaction ID {transaction_id} not found")
-            conn.close()
-            return False
-        
+
+        cursor.execute("""
+            UPDATE transactions
+            SET category_id = %s, amount = %s, description = %s, transaction_date = %s
+            WHERE id = %s;
+        """, (category_id, amount, description, transaction_date, transaction_id))
+
         conn.commit()
         conn.close()
-        
-        return True
-        
-    except sqlite3.Error as e:
-        print(f"Error updating transaction: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
+
+        return cursor.rowcount > 0
+
+    except Exception as e:
+        print("❌ Update error:", e)
         return False
 
+
 def delete_transaction_from_db(transaction_id: int) -> bool:
-    """Delete a transaction from the database"""
+    """Delete transaction"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        cursor.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
-        
-        if cursor.rowcount == 0:
-            print(f"Error: Transaction ID {transaction_id} not found")
-            conn.close()
-            return False
-        
+
+        cursor.execute("DELETE FROM transactions WHERE id = %s;", (transaction_id,))
+        deleted = cursor.rowcount > 0
+
         conn.commit()
         conn.close()
-        
-        return True
-        
-    except sqlite3.Error as e:
-        print(f"Error deleting transaction: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
+        return deleted
+
+    except Exception as e:
+        print("❌ Delete error:", e)
         return False
