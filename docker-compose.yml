@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: finance_db
+    environment:
+      POSTGRES_USER: ethan
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: finance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ethan -d finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  flask:
+    build: .
+    container_name: finance_flask
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ethan
+      DB_PASSWORD: strongpassword
+      DB_NAME: finance
+    restart: always
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:

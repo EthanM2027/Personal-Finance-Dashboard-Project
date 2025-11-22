@@ -7,7 +7,7 @@ DB_CONFIG = {
     "dbname": "finance",
     "user": "ethan",
     "password": "strongpassword",
-    "host": "localhost",
+    "host": "postgres",
     "port": 5432
 }
 
